@@ -1,0 +1,13 @@
+[package]
+name = "mlish-core"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+uuid = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+validator = { workspace = true }
+erased-serde = { workspace = true }
+rmp-serde = { workspace = true }
+time = { workspace = true }

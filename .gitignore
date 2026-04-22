@@ -1,0 +1,4 @@
+/target
+
+**/src/generated/**
+!**/src/generated/mod.rs

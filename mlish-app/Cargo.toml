@@ -1,0 +1,13 @@
+[package]
+name = "mlish-app"
+version = "0.1.0"
+edition = "2024"
+build = "src/build.rs"
+
+[dependencies]
+tokio = { workspace = true }
+
+eframe = "0.34.1"
+
+[build-dependencies]
+quote = "1.0.45"
