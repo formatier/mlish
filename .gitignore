@@ -2,3 +2,7 @@
 
 **/src/generated/**
 !**/src/generated/mod.rs
+**/.env**
+
+.idea
+.vscode
