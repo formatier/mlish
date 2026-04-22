@@ -11,7 +11,7 @@ pub struct MlishApp {
 impl MlishApp {
     pub fn new(cc: &eframe::CreationContext) -> Self {
         let mut font_definitions = FontDefinitions::default();
-        generated::font::get_font().iter().for_each(|font| {
+        generated::font::FONTS.iter().for_each(|font| {
             let font_data = FontData::from_static(font.font_data);
             font_definitions
                 .font_data

@@ -1,6 +1,5 @@
-use std::{env, fs, path::PathBuf};
-
-use quote::{TokenStreamExt, format_ident, quote};
+use quote::{ToTokens, TokenStreamExt, format_ident, quote};
+use std::{env, fs, path::Path};
 
 struct FontData {
     extension: String,
@@ -9,71 +8,88 @@ struct FontData {
 }
 
 fn main() {
-    let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
+    let manifest_dir = env::var("CARGO_MANIFEST_DIR").expect("Failed to get manifest dir");
+    let base_path = Path::new(&manifest_dir);
 
-    let mut project_src_dir_path = PathBuf::from(manifest_dir.clone());
-    project_src_dir_path.push("src");
-    project_src_dir_path.push("generated");
+    let font_dir_path = base_path.join("assets").join("fonts");
+    let output_path = base_path.join("src").join("generated");
 
-    let mut font_dir_path = PathBuf::from(manifest_dir.clone());
-    font_dir_path.push("assets");
-    font_dir_path.push("fonts");
+    let font_data_list = fetch_fonts(&font_dir_path);
 
-    let font_dir = fs::read_dir(&font_dir_path).unwrap();
-    let font_data_list = font_dir.filter_map(|font_dir_item| {
-        let font_dir_item = font_dir_item.unwrap();
-        let font_type = font_dir_item.file_type().unwrap();
-        let font_name = font_dir_item.file_name().into_string().unwrap().to_string();
+    let generated_font_module_code = generate_font_module(&font_data_list);
 
-        if font_type.is_file() {
-            let (font_name, font_extension) = font_name.split_once(".").unwrap();
+    if let Some(parent) = output_path.parent() {
+        fs::create_dir_all(parent).ok();
+    }
+    fs::write(
+        output_path.join("font.rs"),
+        generated_font_module_code.to_token_stream().to_string(),
+    )
+    .expect("Failed to write generated file");
+}
+
+fn fetch_fonts(path: &Path) -> Vec<FontData> {
+    fs::read_dir(path)
+        .expect("Font directory missing")
+        .flatten()
+        .filter(|entry| entry.file_type().map(|t| t.is_file()).unwrap_or(false))
+        .filter_map(|entry| {
+            let file_name = entry.file_name().into_string().ok()?;
+            let path = Path::new(&file_name);
+
+            let name = path.file_stem()?.to_str()?.to_string();
+            let extension = path.extension()?.to_str()?.to_string();
+
             Some(FontData {
-                extension: font_extension.to_string(),
-                name: font_name.to_string(),
-                file_name: format!("{}.{}", font_name.to_string(), font_extension.to_string()),
+                name,
+                extension,
+                file_name,
             })
-        } else {
-            None
-        }
-    });
+        })
+        .collect()
+}
 
-    let mut font_tokens_main = quote! {
-        pub struct Font{
-            pub name: String,
-            pub font_data: &'static [u8],
-            pub extension: String
-        }
-    };
+fn generate_font_module(fonts: &[FontData]) -> impl ToTokens {
+    let mut font_constants = quote! {};
+    let mut vec_push_statements = quote! {};
 
-    let mut get_font_function_tokens = quote! {
-        let mut font = Vec::new();
-    };
-    font_data_list.for_each(|font_data| {
-        let font_name = font_data.name;
-        let font_extension = font_data.extension;
-        let font_path = format!("../../assets/fonts/{}", font_data.file_name);
+    for font in fonts {
+        let const_name = format_ident!("{}", font.name.to_uppercase().replace("-", "_"));
+        let rel_path = format!("../../assets/fonts/{}", font.file_name);
+        let font_name = &font.name;
+        let font_ext = &font.extension;
 
-        let font_name_token = format_ident!("{}", font_name.to_uppercase().replace("-", "_"));
-        font_tokens_main.append_all(quote! {
-            const #font_name_token: &'static [u8] = include_bytes!(#font_path);
+        font_constants.append_all(quote! {
+            const #const_name: &'static [u8] = include_bytes!(#rel_path);
         });
 
-        get_font_function_tokens.append_all(quote! {
-            font.push(Font{
+        vec_push_statements.append_all(quote! {
+            fonts.push(Font {
                 name: #font_name.to_string(),
-                font_data: #font_name_token,
-                extension: #font_extension.to_string()
+                font_data: #const_name,
+                extension: #font_ext.to_string(),
             });
         });
-    });
+    }
 
-    font_tokens_main.append_all(quote! {
-        pub fn get_font() -> Vec<Font> {
-            #get_font_function_tokens
+    quote! {
+        use std::sync::LazyLock;
+
+        #[derive(Debug, Clone)]
+        pub struct Font {
+            pub name: String,
+            pub font_data: &'static [u8],
+            pub extension: String,
         }
-    });
 
-    let mut font_module_path = project_src_dir_path;
-    font_module_path.push("font.rs");
-    fs::write(font_module_path, font_tokens_main.to_string()).unwrap();
+        #font_constants
+
+        pub const FONTS: LazyLock<Vec<Font>> = LazyLock::new(|| get_fonts());
+
+        fn get_fonts() -> Vec<Font> {
+            let mut fonts = Vec::new();
+            #vec_push_statements
+            fonts
+        }
+    }
 }
