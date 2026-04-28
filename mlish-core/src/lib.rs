@@ -1,5 +1,3 @@
-pub mod app;
-pub mod collections;
-pub mod service;
-pub mod services;
-pub mod shared;
+pub mod core;
+pub mod domain;
+pub mod utils;

@@ -1,13 +1,9 @@
 mod app;
 mod generated;
-pub mod ui;
+mod stylesheets;
 
 fn main() {
-    let native_options = eframe::NativeOptions::default();
-    eframe::run_native(
-        "Mlish",
-        native_options,
-        Box::new(|cc| Ok(Box::new(app::MlishApp::new(&cc)))),
-    )
-    .unwrap();
+    iced::application(move || app::App::new(), app::App::update, app::App::view)
+        .run()
+        .unwrap();
 }

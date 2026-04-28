@@ -6,8 +6,11 @@ build = "src/build.rs"
 
 [dependencies]
 tokio = { workspace = true }
+mlish-core = { workspace = true }
+serde = { workspace = true }
+uuid = { workspace = true }
 
-eframe = "0.34.1"
+iced = "0.14.0"
 
 [build-dependencies]
 quote = "1.0.45"
