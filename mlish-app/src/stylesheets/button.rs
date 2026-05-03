@@ -1,48 +1,37 @@
-use iced::{Vector, padding, widget::button};
+use iced::{Vector, widget::button};
 
-#[derive(Default)]
-pub enum Button {
-    #[default]
+use crate::stylesheets::ShadowLevel;
+
+pub enum ButtonClass {
     Normal {
-        shadow: Option<ButtonShadow>,
+        shadow: Option<ShadowLevel>,
         level: Option<ButtonLevel>,
     },
     Success {
-        shadow: Option<ButtonShadow>,
+        shadow: Option<ShadowLevel>,
         level: Option<ButtonLevel>,
     },
     Warn {
-        shadow: Option<ButtonShadow>,
+        shadow: Option<ShadowLevel>,
         level: Option<ButtonLevel>,
     },
     Fail {
-        shadow: Option<ButtonShadow>,
+        shadow: Option<ShadowLevel>,
         level: Option<ButtonLevel>,
     },
     Disable,
 }
 
-const DEFAULT_OFFSET: f32 = 4.0;
-
-#[derive(Default)]
-pub enum ButtonShadow {
-    #[default]
-    None,
-    Light(Option<f32>),
-    Strong(Option<f32>),
-}
-
-impl ButtonShadow {
-    fn calculate_offset(&self) -> f32 {
-        match self {
-            ButtonShadow::None => 0f32,
-            ButtonShadow::Light(offset) => offset.map_or(DEFAULT_OFFSET, |offset| offset / 2),
-            ButtonShadow::Strong(offset) => offset.map_or(DEFAULT_OFFSET, |offset| offset),
+impl Default for ButtonClass {
+    fn default() -> Self {
+        Self::Normal {
+            shadow: None,
+            level: None,
         }
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Clone, Copy)]
 pub enum ButtonLevel {
     #[default]
     Surface,
@@ -50,80 +39,75 @@ pub enum ButtonLevel {
 }
 
 impl button::Catalog for super::MlishTheme {
-    type Class<'a> = Button;
+    type Class<'a> = ButtonClass;
 
     fn default<'a>() -> Self::Class<'a> {
-        Button::Normal
+        ButtonClass::default()
     }
 
     fn style(&self, class: &Self::Class<'_>, status: button::Status) -> button::Style {
+        let palette = self.get_palette();
         let mut style = button::Style::default();
 
         match class {
-            Button::Normal { shadow, level } => {
+            ButtonClass::Normal { shadow, level } => {
                 if let Some(shadow) = shadow {
-                    style.shadow = iced::Shadow {
-                        color: self.get_palette().shadow,
-                        offset: Vector::new(shadow.calculate_offset(), -shadow.calculate_offset()),
-                        blur_radius: 0.0,
-                    };
+                    style.shadow = shadow.into_shadow(palette.clone());
                 }
 
-                style.with_background(level.map_or(
-                    self.get_palette().surface,
-                    |level| match level {
-                        ButtonLevel::Surface => self.get_palette().surface,
-                        ButtonLevel::SurfaceAlternate => self.get_palette().surface_alternate,
-                    },
-                ));
+                style.background = Some(
+                    level
+                        .map_or(palette.surface, |level| match level {
+                            ButtonLevel::Surface => palette.surface,
+                            ButtonLevel::SurfaceAlternate => palette.surface_alternate,
+                        })
+                        .into(),
+                );
             }
-            Button::Success { shadow, level } => {
+            ButtonClass::Success { shadow, level } => {
                 if let Some(shadow) = shadow {
-                    style.shadow = iced::Shadow {
-                        color: self.get_palette().shadow,
-                        offset: Vector::new(shadow.calculate_offset(), -shadow.calculate_offset()),
-                        blur_radius: 0.0,
-                    };
+                    style.shadow = shadow.into_shadow(palette.clone());
                 }
 
-                style.with_background(level.map_or(
-                    self.get_palette().success,
-                    |level| match level {
-                        ButtonLevel::Surface => self.get_palette().success,
-                        ButtonLevel::SurfaceAlternate => self.get_palette().success_alternate,
-                    },
-                ));
+                style.background = Some(
+                    level
+                        .map_or(palette.surface, |level| match level {
+                            ButtonLevel::Surface => palette.surface,
+                            ButtonLevel::SurfaceAlternate => palette.surface_alternate,
+                        })
+                        .into(),
+                );
             }
-            Button::Warn { shadow, level } => {
+            ButtonClass::Warn { shadow, level } => {
                 if let Some(shadow) = shadow {
-                    style.shadow = iced::Shadow {
-                        color: self.get_palette().shadow,
-                        offset: Vector::new(shadow.calculate_offset(), -shadow.calculate_offset()),
-                        blur_radius: 0.0,
-                    };
+                    style.shadow = shadow.into_shadow(palette.clone());
                 }
 
-                style.with_background(level.map_or(self.get_palette().warn, |level| match level {
-                    ButtonLevel::Surface => self.get_palette().warn,
-                    ButtonLevel::SurfaceAlternate => self.get_palette().warn_alternate,
-                }));
+                style.background = Some(
+                    level
+                        .map_or(palette.surface, |level| match level {
+                            ButtonLevel::Surface => palette.surface,
+                            ButtonLevel::SurfaceAlternate => palette.surface_alternate,
+                        })
+                        .into(),
+                );
             }
-            Button::Fail { shadow, level } => {
+            ButtonClass::Fail { shadow, level } => {
                 if let Some(shadow) = shadow {
-                    style.shadow = iced::Shadow {
-                        color: self.get_palette().shadow,
-                        offset: Vector::new(shadow.calculate_offset(), -shadow.calculate_offset()),
-                        blur_radius: 0.0,
-                    };
+                    style.shadow = shadow.into_shadow(palette.clone());
                 }
 
-                style.with_background(level.map_or(self.get_palette().fail, |level| match level {
-                    ButtonLevel::Surface => self.get_palette().fail,
-                    ButtonLevel::SurfaceAlternate => self.get_palette().fail_alternate,
-                }));
+                style.background = Some(
+                    level
+                        .map_or(palette.surface, |level| match level {
+                            ButtonLevel::Surface => palette.surface,
+                            ButtonLevel::SurfaceAlternate => palette.surface_alternate,
+                        })
+                        .into(),
+                );
             }
-            Button::Disable => {
-                style.with_background(self.get_palette().disable);
+            ButtonClass::Disable => {
+                style.background = Some(palette.disable.into());
             }
         };
 

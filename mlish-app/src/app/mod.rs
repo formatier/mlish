@@ -1,8 +1,9 @@
 use iced::{
     Element,
-    application::IntoBoot,
-    widget::{button, column, text},
+    widget::{button, center, row, text},
 };
+
+use crate::stylesheets::{ButtonClass, ButtonLevel, MlishTheme, PaletteType, ShadowLevel};
 
 #[derive(Clone)]
 pub enum AppMessage {
@@ -10,21 +11,35 @@ pub enum AppMessage {
     De,
 }
 
-#[derive(Default)]
 pub struct App {
     counter: i32,
+    theme: MlishTheme,
 }
 
 impl App {
     pub fn new() -> Self {
-        Self::default()
+        Self {
+            counter: 0,
+            theme: MlishTheme::new(PaletteType::MlishLight),
+        }
     }
 
-    pub fn view(&self) -> Element<'_, AppMessage> {
-        column![
-            button("In").on_press(AppMessage::In),
+    pub fn view(&self) -> Element<'_, AppMessage, MlishTheme> {
+        row![
+            button("In")
+                .class(ButtonClass::Normal {
+                    shadow: Some(ShadowLevel::Light),
+                    level: Some(ButtonLevel::Surface),
+                })
+                .on_press(AppMessage::In),
             text(format!("Counter: {}", self.counter)),
-            button("De").on_press(AppMessage::De),
+            button(center("Decrement"))
+                .class(ButtonClass::Normal {
+                    shadow: Some(ShadowLevel::Strong),
+                    level: Some(ButtonLevel::Surface),
+                })
+                .height(48.0)
+                .on_press(AppMessage::De),
         ]
         .into()
     }
@@ -34,5 +49,13 @@ impl App {
             AppMessage::In => self.counter += 1,
             AppMessage::De => self.counter -= 1,
         }
+    }
+
+    pub fn theme(&self) -> Option<MlishTheme> {
+        Some(self.theme.clone())
+    }
+
+    pub fn title(&self) -> String {
+        "Mlish".into()
     }
 }
